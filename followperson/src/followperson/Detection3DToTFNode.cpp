@@ -32,7 +32,7 @@ Detection3DToTFNode::Detection3DToTFNode()
 void Detection3DToTFNode::detectionCallback(const vision_msgs::msg::Detection3DArray::SharedPtr msg)
 {
   for (size_t i = 0; i < msg->detections.size(); ++i) {
-    const auto& detection = msg->detections[i];
+    const auto & detection = msg->detections[i];
 
     if (std::isnan(detection.bbox.center.position.z)) {
       continue;

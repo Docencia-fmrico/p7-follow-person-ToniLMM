@@ -34,7 +34,7 @@ PerceptionNode::PerceptionNode()
     10,
     std::bind(&PerceptionNode::detectionCallback, this, std::placeholders::_1));
 
-    detection_state_pub_ = this->create_publisher<std_msgs::msg::Bool>("person_detected", 10);
+  detection_state_pub_ = this->create_publisher<std_msgs::msg::Bool>("person_detected", 10);
 }
 
 void PerceptionNode::detectionCallback(const vision_msgs::msg::Detection3DArray::SharedPtr msg)
@@ -43,7 +43,7 @@ void PerceptionNode::detectionCallback(const vision_msgs::msg::Detection3DArray:
 
   for (const auto & detection : msg->detections) {
     for (const auto & result : detection.results) {
-      if (result.hypothesis.class_id != "person") continue;
+      if (result.hypothesis.class_id != "person") {continue;}
 
       geometry_msgs::msg::TransformStamped odom2person_tf;
       odom2person_tf.header = detection.header;

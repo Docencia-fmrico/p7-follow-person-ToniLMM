@@ -32,8 +32,9 @@ MainNode::MainNode()
     "control_node",
     10,
     std::bind(&MainNode::controlNodeStateCallback, this, std::placeholders::_1));
-    
-  control_activation_client_ = this->create_client<lifecycle_msgs::srv::ChangeState>("control_node/change_state");
+
+  control_activation_client_ =
+    this->create_client<lifecycle_msgs::srv::ChangeState>("control_node/change_state");
 }
 
 void MainNode::controlNodeStateCallback(const lifecycle_msgs::msg::State::SharedPtr msg)
@@ -49,7 +50,7 @@ void MainNode::checkPersonDetection()
 {
   RCLCPP_INFO(get_logger(), "Checking person detection...");
   if (control_node_->get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE &&
-      !perception_node_->isPersonDetected())
+    !perception_node_->isPersonDetected())
   {
     RCLCPP_INFO(get_logger(), "Person not detected, deactivating control node...");
     auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
