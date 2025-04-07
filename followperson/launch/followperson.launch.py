@@ -39,7 +39,6 @@ def generate_launch_description():
     }.items()
     )
 
-
     followperson_node = Node(
         package='followperson',
         executable='followperson_node',
@@ -52,7 +51,7 @@ def generate_launch_description():
         output='screen',
         parameters=[{'use_sim_time': True}],
         remappings=[
-          ('input_detection', '/rgbd_camera/image'),
+          ('input_detection', '/yolo/detections'),
           ('camera_info', '/rgbd_camera/camera_info'),
           ('output_detection_2d', 'detection_2d'),
         ])
@@ -67,11 +66,44 @@ def generate_launch_description():
           ('camera_info', '/rgbd_camera/camera_info'),
           ('output_detection_3d', 'detection_3d'),
         ])
+    
+    detection3d_to_tf_node = Node(
+        package='followperson',
+        executable='detection3d_to_tf_node',
+        output='screen',
+        parameters=[{'use_sim_time': True}],
+        remappings=[
+            ('detections_3d', 'detection_3d')
+        ]
+    )
+
+    perception_node = Node(
+        package='followperson',
+        executable='perception_node',
+        output='screen',
+        parameters=[{'use_sim_time': True}],
+        remappings=[
+            ('output_detection_3d', '/detection_3d'),
+            ('person_detected', '/person_detected')
+        ]
+    )
+
+    control_node = Node(
+        package='followperson',
+        executable='control_node',
+        output='screen',
+        parameters=[{'use_sim_time': True}],
+    )
+
 
     ld = LaunchDescription()
     ld.add_action(followperson_node)
     ld.add_action(detector_cmd)
     ld.add_action(convert_2d_3d)
     ld.add_action(yolo_bringup_launch)
+    ld.add_action(detection3d_to_tf_node)
+    ld.add_action(perception_node)
+    ld.add_action(control_node)
+
 
     return ld

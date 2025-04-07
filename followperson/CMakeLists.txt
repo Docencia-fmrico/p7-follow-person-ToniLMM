@@ -35,6 +35,7 @@ set(dependencies
 include_directories(include)
 
 add_library(${PROJECT_NAME} SHARED
+  src/followperson/Detection3DToTFNode.cpp
   src/followperson/PerceptionNode.cpp
   src/followperson/ControlNode.cpp
   src/followperson/MainNode.cpp
@@ -45,11 +46,26 @@ add_executable(followperson_node src/followperson_main.cpp)
 ament_target_dependencies(followperson_node ${dependencies})
 target_link_libraries(followperson_node ${PROJECT_NAME})
 
+add_executable(detection3d_to_tf_node src/detection3d_to_tf_main.cpp)
+ament_target_dependencies(detection3d_to_tf_node ${dependencies})
+target_link_libraries(detection3d_to_tf_node ${PROJECT_NAME})
+
+add_executable(perception_node src/perception_main.cpp)
+ament_target_dependencies(perception_node ${dependencies})
+target_link_libraries(perception_node ${PROJECT_NAME})
+
+add_executable(control_node src/control_main.cpp)
+ament_target_dependencies(control_node ${dependencies})
+target_link_libraries(control_node ${PROJECT_NAME})
+
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 
 install(TARGETS
   ${PROJECT_NAME}
   followperson_node
+  detection3d_to_tf_node
+  perception_node
+  control_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

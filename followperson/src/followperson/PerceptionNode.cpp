@@ -26,14 +26,13 @@ PerceptionNode::PerceptionNode()
   logger_(rclcpp::get_logger("PerceptionNode")),
   tf_buffer_(std::make_shared<tf2_ros::Buffer>(this->get_clock()))
 {
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_); // Create a TF listener with the TF buffer
-  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this); // Create a TF broadcaster passing this node to the constructor
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
 
   detection_subscription_ = this->create_subscription<vision_msgs::msg::Detection3DArray>(
-    // Create a subscription to the detection topic
     "output_detection_3d",
     10,
-    std::bind(&PerceptionNode::detectionCallback, this, std::placeholders::_1)); // Set the callback function for incoming detection messages
+    std::bind(&PerceptionNode::detectionCallback, this, std::placeholders::_1));
 
     detection_state_pub_ = this->create_publisher<std_msgs::msg::Bool>("person_detected", 10);
 }
@@ -79,9 +78,9 @@ void PerceptionNode::detectionCallback(const vision_msgs::msg::Detection3DArray:
   RCLCPP_DEBUG(logger_, "Person detected: %s", found_person ? "true" : "false");
 }
 
-bool PerceptionNode::isPersonDetected() const // Definition of the method to check if a person is detected
+bool PerceptionNode::isPersonDetected() const
 {
-  return is_person_detected_; // Return the flag indicating if a person is detected
+  return is_person_detected_;
 }
 
 }  // namespace followperson

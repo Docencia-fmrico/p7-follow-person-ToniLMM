@@ -19,18 +19,16 @@ using namespace std::chrono_literals;
 namespace followperson
 {
 
-MainNode::MainNode() // Constructor definition for MainNode class
-: rclcpp_lifecycle::LifecycleNode("main_node") // Initialize the node with the name "main_node"
+MainNode::MainNode()
+: rclcpp_lifecycle::LifecycleNode("main_node")
 {
-  perception_node_ = std::make_shared<PerceptionNode>(); // Create an instance of PerceptionNode and store it in a shared pointer
-  control_node_ = std::make_shared<ControlNode>(); // Create an instance of ControlNode and store it in a shared pointer
+  perception_node_ = std::make_shared<PerceptionNode>();
+  control_node_ = std::make_shared<ControlNode>();
 
   timer_ = create_wall_timer(
-    // Create a timer that invokes the checkPersonDetection method
     100ms, std::bind(&MainNode::checkPersonDetection, this));
 
   control_node_state_subscription_ = this->create_subscription<lifecycle_msgs::msg::State>(
-    // Subscribe to changes in the state of the control node
     "control_node",
     10,
     std::bind(&MainNode::controlNodeStateCallback, this, std::placeholders::_1));
@@ -49,9 +47,11 @@ void MainNode::controlNodeStateCallback(const lifecycle_msgs::msg::State::Shared
 
 void MainNode::checkPersonDetection()
 {
+  RCLCPP_INFO(get_logger(), "Checking person detection...");
   if (control_node_->get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE &&
       !perception_node_->isPersonDetected())
   {
+    RCLCPP_INFO(get_logger(), "Person not detected, deactivating control node...");
     auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
     request->transition.id = lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE;
     control_activation_client_->async_send_request(request);

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
 #include "followperson/ControlNode.hpp"
 
 using namespace std::chrono_literals;
@@ -19,14 +20,13 @@ using namespace std::chrono_literals;
 namespace followperson
 {
 
-ControlNode::ControlNode() // Constructor definition for ControlNode class
-: rclcpp_lifecycle::LifecycleNode("control_node"), // Initialize the node with the name "control_node"
-  tf_buffer_(std::make_shared<tf2_ros::Buffer>(this->get_clock())), // Create a buffer for transforming coordinates
-  tf_listener_(std::make_shared<tf2_ros::TransformListener>(*tf_buffer_)) // Create a listener for TF transformations
+ControlNode::ControlNode()
+: rclcpp_lifecycle::LifecycleNode("control_node"),
+  tf_buffer_(std::make_shared<tf2_ros::Buffer>(this->get_clock())),
+  tf_listener_(std::make_shared<tf2_ros::TransformListener>(*tf_buffer_))
 {
-  cmd_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10); // Create a publisher for Twist messages
+  cmd_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
 
-  // Set PID parameters
   kp_ = 0.41;
   ki_ = 0.06;
   kd_ = 0.53;
@@ -34,59 +34,56 @@ ControlNode::ControlNode() // Constructor definition for ControlNode class
   integral_ = 0.0;
 
   timer_ = create_wall_timer(
-    // Create a timer that invokes the controlLoop method
     100ms, std::bind(&ControlNode::controlLoop, this));
 }
 
-void ControlNode::controlLoop() // Definition of the control loop method
+void ControlNode::controlLoop()
 {
   try {
-    auto person_tf = tf_buffer_->lookupTransform("odom", "person", tf2::TimePointZero); // Look up the transformation from base_link to person frame
+    auto person_tf = tf_buffer_->lookupTransform("odom", "person", tf2::TimePointZero);
 
-    double error = calculateError(person_tf); // Calculate the error based on the person's position
+    double error = calculateError(person_tf);
 
-    auto control_command = calculateControlCommand(error, person_tf); // Calculate the control command based on the error and person's position
+    auto control_command = calculateControlCommand(error, person_tf);
 
-    cmd_publisher_->publish(control_command); // Publish the control command
+    cmd_publisher_->publish(control_command);
 
-  } catch (const tf2::TransformException & ex) { // Handle exceptions related to TF transformations
-    RCLCPP_ERROR(this->get_logger(), "Error getting person transform: %s", ex.what()); // Log the error message
-    // Handle the case when the person is lost or not detected
-    geometry_msgs::msg::Twist search_command; // Create a Twist message for searching
-    search_command.angular.z = 0.3; // Set the angular velocity to make the robot turn in place
-    cmd_publisher_->publish(search_command); // Publish the search command
+  } catch (const tf2::TransformException & ex) {
+    RCLCPP_ERROR(this->get_logger(), "Error getting person transform: %s", ex.what());
+    geometry_msgs::msg::Twist search_command;
+    search_command.angular.z = 0.3;
+    cmd_publisher_->publish(search_command);
   }
 }
 
-double ControlNode::calculateError(const geometry_msgs::msg::TransformStamped & person_tf) // Definition of the error calculation method
+double ControlNode::calculateError(const geometry_msgs::msg::TransformStamped & person_tf)
 {
   double distance = std::sqrt(
-    // Calculate the distance from the robot to the person
     std::pow(person_tf.transform.translation.x, 2) +
     std::pow(person_tf.transform.translation.y, 2)
   );
-  return distance - 1.0; // Return the error, which is the deviation from the desired distance
+  return distance - 1.0;
 }
 
 geometry_msgs::msg::Twist ControlNode::calculateControlCommand(
   double error,
-  const geometry_msgs::msg::TransformStamped & person_tf) // Definition of the control command calculation method
+  const geometry_msgs::msg::TransformStamped & person_tf)
 {
-  integral_ += error; // Update the integral term of the PID controller
-  double derivative = error - prev_error_; // Calculate the derivative term of the PID controller
-  geometry_msgs::msg::Twist control_command; // Create a Twist message for the control command
-  control_command.linear.x = kp_ * error + ki_ * integral_ + kd_ * derivative; // Calculate the linear velocity based on PID control
+  integral_ += error;
+  double derivative = error - prev_error_;
+  geometry_msgs::msg::Twist control_command;
+  control_command.linear.x = kp_ * error + ki_ * integral_ + kd_ * derivative;
 
-  double angle = std::atan2(person_tf.transform.translation.y, person_tf.transform.translation.x); // Calculate the angle to turn towards the person
-  control_command.angular.z = angle; // Set the angular velocity to turn towards the person
+  double angle = std::atan2(person_tf.transform.translation.y, person_tf.transform.translation.x);
+  control_command.angular.z = angle;
 
-  prev_error_ = error; // Update the previous error for the next iteration
-  return control_command; // Return the control command
+  prev_error_ = error;
+  return control_command;
 }
 
-const rclcpp_lifecycle::State ControlNode::get_current_state() const // Definition of the method to get the current state
+const rclcpp_lifecycle::State ControlNode::get_current_state() const
 {
-  return rclcpp_lifecycle::LifecycleNode::get_current_state(); // Return the current state of the node
+  return rclcpp_lifecycle::LifecycleNode::get_current_state();
 }
 
 } // namespace followperson
