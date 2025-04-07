@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PERCEPTION_NODE_HPP_
-#define PERCEPTION_NODE_HPP_
+#ifndef FOLLOWPERSON__PERCEPTIONNODE_HPP_
+#define FOLLOWPERSON__PERCEPTIONNODE_HPP_
 
 #include "rclcpp/rclcpp.hpp"
 #include "vision_msgs/msg/detection3_d_array.hpp"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/buffer.h"
+#include "std_msgs/msg/bool.hpp"
 
 namespace followperson
 {
@@ -35,7 +36,9 @@ public:
 private:
   void detectionCallback(const vision_msgs::msg::Detection3DArray::SharedPtr msg);
 
+  rclcpp::Logger logger_;
   rclcpp::Subscription<vision_msgs::msg::Detection3DArray>::SharedPtr detection_subscription_;
+  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr detection_state_pub_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
@@ -45,4 +48,4 @@ private:
 
 } // namespace followperson
 
-#endif // PERCEPTION_NODE_HPP_
+#endif // FOLLOWPERSON__PERCEPTIONNODE_HPP_

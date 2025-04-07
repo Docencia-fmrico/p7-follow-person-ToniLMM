@@ -15,14 +15,16 @@
 #include "followperson/PerceptionNode.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2/LinearMath/Quaternion.h"
-#include "yolov8_msgs/msg/detection_array.hpp"
+#include "yolo_msgs/msg/detection_array.hpp"
 
 namespace followperson
 {
 
-PerceptionNode::PerceptionNode() // Constructor definition for PerceptionNode class
-: Node("perception_node"), tf_buffer_(std::make_shared<tf2_ros::Buffer>(this->get_clock())), // Initialize the node with the name "perception_node" and create a TF buffer
-  is_person_detected_(false) // Initialize the flag for person detection to false
+PerceptionNode::PerceptionNode()
+: Node("perception_node"),
+  is_person_detected_(false),
+  logger_(rclcpp::get_logger("PerceptionNode")),
+  tf_buffer_(std::make_shared<tf2_ros::Buffer>(this->get_clock()))
 {
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_); // Create a TF listener with the TF buffer
   tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this); // Create a TF broadcaster passing this node to the constructor
@@ -32,48 +34,49 @@ PerceptionNode::PerceptionNode() // Constructor definition for PerceptionNode cl
     "output_detection_3d",
     10,
     std::bind(&PerceptionNode::detectionCallback, this, std::placeholders::_1)); // Set the callback function for incoming detection messages
+
+    detection_state_pub_ = this->create_publisher<std_msgs::msg::Bool>("person_detected", 10);
 }
 
-void PerceptionNode::detectionCallback(const vision_msgs::msg::Detection3DArray::SharedPtr msg) // Definition of the detection callback method
+void PerceptionNode::detectionCallback(const vision_msgs::msg::Detection3DArray::SharedPtr msg)
 {
-  bool found_person = false; // Initialize a flag to track if a person is found in the detection results
+  bool found_person = false;
 
-  for (const auto & detection : msg->detections) { // Iterate through each detection in the message
-    for (const auto & result : detection.results) { // Iterate through each result in the detection
-      // Assuming detection provides position in the frame of the robot
-      geometry_msgs::msg::TransformStamped odom2person_tf; // Create a TransformStamped message for the person's position in the robot's frame
-      odom2person_tf.header = detection.header; // Set the header of the TF message
-      odom2person_tf.child_frame_id = "person"; // Set the child frame ID as "person"
-      odom2person_tf.transform.translation.x = detection.bbox.center.position.x; // Set the translation in x-axis
-      odom2person_tf.transform.translation.y = detection.bbox.center.position.y; // Set the translation in y-axis
-      odom2person_tf.transform.translation.z = detection.bbox.center.position.z; // Set the translation in z-axis
+  for (const auto & detection : msg->detections) {
+    for (const auto & result : detection.results) {
+      if (result.hypothesis.class_id != "person") continue;
 
-      // Calculate orientation of the robot towards the person
-      tf2::Quaternion quaternion; // Create a quaternion for orientation
-      quaternion.setRPY(
-        // Set the quaternion based on the yaw angle towards the person
-        0, 0,
-        atan2(detection.bbox.center.position.y, detection.bbox.center.position.x));
-      odom2person_tf.transform.rotation.x = quaternion.getX(); // Set the quaternion components
+      geometry_msgs::msg::TransformStamped odom2person_tf;
+      odom2person_tf.header = detection.header;
+      odom2person_tf.child_frame_id = "person";
+      odom2person_tf.transform.translation.x = detection.bbox.center.position.x;
+      odom2person_tf.transform.translation.y = detection.bbox.center.position.y;
+      odom2person_tf.transform.translation.z = detection.bbox.center.position.z;
+
+
+      tf2::Quaternion quaternion;
+      quaternion.setRPY(0, 0, atan2(
+        detection.bbox.center.position.y,
+        detection.bbox.center.position.x));
+
+      odom2person_tf.transform.rotation.x = quaternion.getX();
       odom2person_tf.transform.rotation.y = quaternion.getY();
       odom2person_tf.transform.rotation.z = quaternion.getZ();
       odom2person_tf.transform.rotation.w = quaternion.getW();
 
-      // Publish the transformed TF
-      tf_broadcaster_->sendTransform(odom2person_tf); // Publish the TF for the person's position
+      tf_broadcaster_->sendTransform(odom2person_tf);
 
-      // Set found_person flag if object detected is "person"
-      if (result.hypothesis.class_id == "person") { // Check if the detected object is a person
-        found_person = true; // Set the flag to true
-        is_person_detected_ = true; // Set the flag for person detection to true
-      }
+      found_person = true;
     }
   }
 
-  // If person is not detected, reset the flag
-  if (!found_person) { // If no person is found in the detections
-    is_person_detected_ = false; // Reset the flag for person detection
-  }
+  is_person_detected_ = found_person;
+
+  std_msgs::msg::Bool detection_msg;
+  detection_msg.data = found_person;
+  detection_state_pub_->publish(detection_msg);
+
+  RCLCPP_DEBUG(logger_, "Person detected: %s", found_person ? "true" : "false");
 }
 
 bool PerceptionNode::isPersonDetected() const // Definition of the method to check if a person is detected

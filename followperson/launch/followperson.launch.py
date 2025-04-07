@@ -14,24 +14,32 @@
 
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import ThisLaunchFileDir
+import os
+from ament_index_python.packages import get_package_share_directory
+
 
 
 def generate_launch_description():
-    
-    perception_node = Node(
-        package='followperson',
-        executable='perception_node',
-        output='screen',
-        parameters=[{'use_sim_time': True}]
+
+    yolo_bringup_launch = IncludeLaunchDescription(
+    PythonLaunchDescriptionSource(
+        os.path.join(
+            get_package_share_directory('yolo_bringup'),
+            'launch',
+            'yolov8.launch.py'
+        )
+    ),
+    launch_arguments={
+        'input_image_topic': '/rgbd_camera/image',
+        'model': 'yolov8m-seg.pt',
+        'image_reliability': '0',
+    }.items()
     )
-    '''
-    control_node = Node(
-        package='followperson',
-        executable='control_node',
-        output='screen',
-        parameters=[{'use_sim_time': True}]
-    )
-    '''
+
+
     followperson_node = Node(
         package='followperson',
         executable='followperson_node',
@@ -40,12 +48,13 @@ def generate_launch_description():
     )
 
     detector_cmd = Node(package='camera',
-        executable='hsv_filter',
+        executable='yolo_detection',
         output='screen',
         parameters=[{'use_sim_time': True}],
         remappings=[
-          ('input_image', '/rgbd_camera/image'),
+          ('input_detection', '/rgbd_camera/image'),
           ('camera_info', '/rgbd_camera/camera_info'),
+          ('output_detection_2d', 'detection_2d'),
         ])
 
     convert_2d_3d = Node(package='camera',
@@ -60,10 +69,9 @@ def generate_launch_description():
         ])
 
     ld = LaunchDescription()
-    #ld.add_action(perception_node)
-    #ld.add_action(control_node)
     ld.add_action(followperson_node)
     ld.add_action(detector_cmd)
     ld.add_action(convert_2d_3d)
+    ld.add_action(yolo_bringup_launch)
 
     return ld

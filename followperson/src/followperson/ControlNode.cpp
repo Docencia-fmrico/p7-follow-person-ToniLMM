@@ -86,7 +86,7 @@ geometry_msgs::msg::Twist ControlNode::calculateControlCommand(
 
 const rclcpp_lifecycle::State ControlNode::get_current_state() const // Definition of the method to get the current state
 {
-  return this->get_current_state(); // Return the current state of the node
+  return rclcpp_lifecycle::LifecycleNode::get_current_state(); // Return the current state of the node
 }
 
 } // namespace followperson

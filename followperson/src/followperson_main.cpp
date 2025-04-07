@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "rclcpp/rclcpp.hpp"
 
+#include "rclcpp/rclcpp.hpp"
 #include "followperson/MainNode.hpp"
 
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
 
-  auto node = std::make_shared<followperson::MainNode>();
+  followperson::MainNode::SharedPtr node = std::make_shared
+    <followperson::MainNode>();
 
   rclcpp::spin(node->get_node_base_interface());
 

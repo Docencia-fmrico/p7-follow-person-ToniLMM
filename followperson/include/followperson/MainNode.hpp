@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef MAIN_NODE_HPP_
-#define MAIN_NODE_HPP_
+#ifndef FOLLOWPERSON__MAINNODE_HPP_
+#define FOLLOWPERSON__MAINNODE_HPP_
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -56,4 +56,4 @@ private:
 
 } // namespace followperson
 
-#endif // MAIN_NODE_HPP_
+#endif // FOLLOWPERSON__MAINNODE_HPP_

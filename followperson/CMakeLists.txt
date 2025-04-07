@@ -16,7 +16,7 @@ find_package(nav_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
-find_package(yolov8_msgs REQUIRED)
+find_package(yolo_msgs REQUIRED)
 
 set(dependencies
   rclcpp
@@ -29,7 +29,7 @@ set(dependencies
   tf2_geometry_msgs
   lifecycle_msgs
   rclcpp_lifecycle
-  yolov8_msgs
+  yolo_msgs
 )
 
 include_directories(include)
@@ -45,16 +45,11 @@ add_executable(followperson_node src/followperson_main.cpp)
 ament_target_dependencies(followperson_node ${dependencies})
 target_link_libraries(followperson_node ${PROJECT_NAME})
 
-add_executable(perception_node src/perception_main.cpp)
-ament_target_dependencies(perception_node ${dependencies})
-target_link_libraries(perception_node ${PROJECT_NAME})
-
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 
 install(TARGETS
   ${PROJECT_NAME}
   followperson_node
-  perception_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

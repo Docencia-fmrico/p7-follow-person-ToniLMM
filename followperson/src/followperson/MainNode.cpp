@@ -34,29 +34,27 @@ MainNode::MainNode() // Constructor definition for MainNode class
     "control_node",
     10,
     std::bind(&MainNode::controlNodeStateCallback, this, std::placeholders::_1));
+    
+  control_activation_client_ = this->create_client<lifecycle_msgs::srv::ChangeState>("control_node/change_state");
 }
 
 void MainNode::controlNodeStateCallback(const lifecycle_msgs::msg::State::SharedPtr msg)
 {
-  if (msg->label == "inactive") { // Check if the control node is inactive
-    // If the control node is inactive and a person is detected, activate the control node
-    if (perception_node_->isPersonDetected()) {
-      auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>(); // Create a request to change the state of the control node
-      request->transition.id = lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE; // Set the transition to activate the control node
-      control_activation_client_->async_send_request(request); // Send the request asynchronously
-    }
+  if (msg->label == "inactive" && perception_node_->isPersonDetected()) {
+    auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
+    request->transition.id = lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE;
+    control_activation_client_->async_send_request(request);
   }
 }
 
 void MainNode::checkPersonDetection()
 {
-  // If the control node is active and no person is detected, deactivate the control node
   if (control_node_->get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE &&
-    !perception_node_->isPersonDetected())
+      !perception_node_->isPersonDetected())
   {
-    auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>(); // Create a request to change the state of the control node
-    request->transition.id = lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE; // Set the transition to deactivate the control node
-    control_activation_client_->async_send_request(request); // Send the request asynchronously
+    auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
+    request->transition.id = lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE;
+    control_activation_client_->async_send_request(request);
   }
 }
 
