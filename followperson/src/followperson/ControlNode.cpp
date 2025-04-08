@@ -27,9 +27,9 @@ ControlNode::ControlNode()
 {
   cmd_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
 
-  kp_ = 0.41;
-  ki_ = 0.06;
-  kd_ = 0.53;
+  kp_ = 0.2;
+  ki_ = 0.01;
+  kd_ = 0.1;
   prev_error_ = 0.0;
   integral_ = 0.0;
 
@@ -41,6 +41,11 @@ void ControlNode::controlLoop()
 {
   try {
     auto person_tf = tf_buffer_->lookupTransform("odom", "person", tf2::TimePointZero);
+
+    RCLCPP_INFO(this->get_logger(), "Person found at: x=%f, y=%f, z=%f",
+      person_tf.transform.translation.x,
+      person_tf.transform.translation.y,
+      person_tf.transform.translation.z);
 
     double error = calculateError(person_tf);
 
@@ -71,11 +76,19 @@ geometry_msgs::msg::Twist ControlNode::calculateControlCommand(
 {
   integral_ += error;
   double derivative = error - prev_error_;
+
   geometry_msgs::msg::Twist control_command;
   control_command.linear.x = kp_ * error + ki_ * integral_ + kd_ * derivative;
 
+  // Limitar velocidad lineal (por ejemplo, entre 0.0 y 0.6 m/s)
+  if (control_command.linear.x > 0.6) {control_command.linear.x = 0.6;}
+  if (control_command.linear.x < 0.0) {control_command.linear.x = 0.0;}
+
+  // Ángulo hacia la persona
   double angle = std::atan2(person_tf.transform.translation.y, person_tf.transform.translation.x);
-  control_command.angular.z = angle;
+
+  // Limitar velocidad angular (por ejemplo, entre -0.5 y 0.5 rad/s)
+  control_command.angular.z = std::clamp(angle, -0.5, 0.5);
 
   prev_error_ = error;
   return control_command;

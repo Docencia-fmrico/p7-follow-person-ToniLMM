@@ -40,7 +40,7 @@ void Detection3DToTFNode::detectionCallback(const vision_msgs::msg::Detection3DA
 
     geometry_msgs::msg::TransformStamped transform;
     transform.header.stamp = this->get_clock()->now();
-    transform.header.frame_id = "camera_link";
+    transform.header.frame_id = "odom";
     transform.child_frame_id = "person_" + std::to_string(i);
 
     transform.transform.translation.x = detection.bbox.center.position.x;
